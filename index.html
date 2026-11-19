@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal da Transportadora</title>
+    <link rel="stylesheet" href="estilo.css">
+</head>
+
+<body class="pagina-login">
+
+    <main class="caixa-login">
+
+        <div class="logo">
+            <img src="logo.png"
+                 alt="Logo da empresa"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+
+            <div class="logo-reserva">
+                LOGO
+            </div>
+        </div>
+
+        <h1>Portal da Transportadora</h1>
+
+        <p class="subtitulo">
+            Consulte seus pagamentos
+        </p>
+
+        <form id="form-login">
+
+            <label for="cpf">
+                CPF ou Usuário
+            </label>
+
+            <input
+                type="text"
+                id="cpf"
+                placeholder="Digite seu CPF ou usuário"
+                required>
+
+            <label for="senha">
+                Senha
+            </label>
+
+            <input
+                type="password"
+                id="senha"
+                placeholder="Digite sua senha"
+                required>
+
+            <button
+                type="submit"
+                class="botao">
+                Entrar
+            </button>
+
+        </form>
+
+        <div id="mensagem"
+             style="margin-top:15px;color:red;font-weight:bold;">
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+
+        const supabaseClient = window.supabase.createClient(
+            "https://zfujippkuopxmbuidwym.supabase.co",
+            "sb_publishable_ZP11cyNHKF88XBnLZV_--g_nSgRctad"
+        );
+
+        document
+            .getElementById("form-login")
+            .addEventListener("submit", async function (e) {
+
+                e.preventDefault();
+
+                const usuario =
+                    document.getElementById("cpf")
+                    .value
+                    .trim();
+
+                const senha =
+                    document.getElementById("senha")
+                    .value
+                    .trim();
+
+                const mensagem =
+                    document.getElementById("mensagem");
+
+                mensagem.innerHTML =
+                    "Consultando...";
+
+                try {
+
+                    /* ==========================
+                       ADMINISTRADORES
+                    ========================== */
+
+                    const {
+                        data: admin,
+                        error: adminError
+                    } = await supabaseClient
+                        .from("administradores")
+                        .select("*")
+                        .eq("login", usuario)
+                        .eq("senha", senha)
+                        .single();
+
+                    if (admin && !adminError) {
+
+                        localStorage.setItem(
+                            "administrador",
+                            JSON.stringify(admin)
+                        );
+
+                        mensagem.innerHTML =
+                            "Administrador autenticado.";
+
+                        setTimeout(() => {
+
+                            window.location.href =
+                                "painel-adm.html";
+
+                        }, 500);
+
+                        return;
+                    }
+
+                    /* ==========================
+                       MOTORISTAS
+                    ========================== */
+
+                    const {
+                        data: motorista,
+                        error: motoristaError
+                    } = await supabaseClient
+                        .from("motoristas")
+                        .select("*")
+                        .eq("cpf", usuario)
+                        .eq("senha", senha)
+                        .eq("ativo", true)
+                        .single();
+
+                    if (motorista && !motoristaError) {
+
+                        localStorage.setItem(
+                            "motorista",
+                            JSON.stringify(motorista)
+                        );
+
+                        mensagem.innerHTML =
+                            "Motorista autenticado.";
+
+                        setTimeout(() => {
+
+                            window.location.href =
+                                "painel.html";
+
+                        }, 500);
+
+                        return;
+                    }
+
+                    mensagem.innerHTML =
+                        "Usuário ou senha inválidos.";
+
+                }
+                catch (erro) {
+
+                    console.error(erro);
+
+                    mensagem.innerHTML =
+                        erro.message;
+
+                }
+
+            });
+
+    </script>
+
+</body>
+
+</html>
