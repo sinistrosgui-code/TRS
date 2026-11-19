@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Motorista</title>
+    <link rel="stylesheet" href="estilo.css">
+</head>
+
+<body class="pagina-painel">
+
+    <header class="topo">
+        <div class="topo-conteudo">
+
+            <div class="topo-logo">
+                <span>Painel do Motorista</span>
+            </div>
+
+            <div class="topo-usuario">
+                <span>
+                    Olá,
+                    <strong id="nomeMotorista"></strong>
+                </span>
+
+                <a href="login.html"
+                   class="botao-sair"
+                   onclick="logout()">
+                    Sair
+                </a>
+            </div>
+
+        </div>
+    </header>
+
+    <main class="conteudo">
+
+        <section class="titulo-secao">
+            <h2>Resumo do mês</h2>
+            <span class="mes" id="competencia"></span>
+        </section>
+
+        <section class="cartoes">
+
+            <article class="cartao">
+                <span class="cartao-rotulo">KM Rodados</span>
+                <span class="cartao-valor" id="kmQuantidade">0</span>
+            </article>
+
+            <article class="cartao">
+                <span class="cartao-rotulo">KM Complemento</span>
+                <span class="cartao-valor" id="complementoQuantidade">0</span>
+            </article>
+
+            <article class="cartao">
+                <span class="cartao-rotulo">Total KM</span>
+                <span class="cartao-valor" id="kmTotal">0</span>
+            </article>
+
+            <article class="cartao destaque">
+                <span class="cartao-rotulo">Valor Total</span>
+                <span class="cartao-valor" id="valorTotal">R$ 0,00</span>
+            </article>
+
+        </section>
+
+        <section class="bloco">
+
+            <h2>Detalhamento</h2>
+
+            <table class="tabela">
+
+                <tr>
+                    <td>KM</td>
+                    <td id="dtKmQtd">0</td>
+                    <td id="dtKmValor">R$ 0,00</td>
+                </tr>
+
+                <tr>
+                    <td>Complemento</td>
+                    <td id="dtComplementoQtd">0</td>
+                    <td id="dtComplementoValor">R$ 0,00</td>
+                </tr>
+
+                <tr>
+                    <td>Diária Toco</td>
+                    <td>-</td>
+                    <td id="dtDiaria">R$ 0,00</td>
+                </tr>
+
+                <tr>
+                    <td>Ocorrência Puxe/Couro</td>
+                    <td>-</td>
+                    <td id="dtOcorrencia">R$ 0,00</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td>-</td>
+                    <td id="dtTotal"><strong>R$ 0,00</strong></td>
+                </tr>
+
+            </table>
+
+        </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+
+        const supabaseClient =
+            window.supabase.createClient(
+                "https://zfujippkuopxmbuidwym.supabase.co",
+                "sb_publishable_ZP11cyNHKF88XBnLZV_--g_nSgRctad"
+            );
+
+        const motorista =
+            JSON.parse(
+                localStorage.getItem("motorista")
+            );
+
+        if (!motorista) {
+            window.location.href = "login.html";
+        }
+
+        document.getElementById("nomeMotorista")
+            .textContent = motorista.nome;
+
+        carregarPagamento();
+
+        async function carregarPagamento() {
+
+            const { data } =
+                await supabaseClient
+                    .from("pagamentos")
+                    .select("*")
+                    .eq("cpf_motorista", motorista.cpf)
+                    .single();
+
+            if (!data) {
+                alert("Pagamento não encontrado.");
+                return;
+            }
+
+            const kmQuantidade =
+                Number(data.km_quantidade || 0);
+
+            const complementoQuantidade =
+                Number(data.complemento_quantidade || 0);
+
+            const kmValor =
+                Number(data.km_valor || 0);
+
+            const complementoValor =
+                Number(data.complemento_valor || 0);
+
+            const diaria =
+                Number(data.diaria_toco || 0);
+
+            const ocorrencia =
+                Number(data.ocorrencia_puxe_couro || 0);
+
+            const valorTotal =
+                Number(data.valor_total || 0);
+
+            const totalKm =
+                kmQuantidade + complementoQuantidade;
+
+            const moeda = valor =>
+                valor.toLocaleString(
+                    "pt-BR",
+                    {
+                        style: "currency",
+                        currency: "BRL"
+                    }
+                );
+
+            document.getElementById("competencia").textContent =
+                data.competencia;
+
+            document.getElementById("kmQuantidade").textContent =
+                kmQuantidade.toLocaleString("pt-BR");
+
+            document.getElementById("complementoQuantidade").textContent =
+                complementoQuantidade.toLocaleString("pt-BR");
+
+            document.getElementById("kmTotal").textContent =
+                totalKm.toLocaleString("pt-BR");
+
+            document.getElementById("valorTotal").textContent =
+                moeda(valorTotal);
+
+            document.getElementById("dtKmQtd").textContent =
+                kmQuantidade.toLocaleString("pt-BR");
+
+            document.getElementById("dtKmValor").textContent =
+                moeda(kmValor);
+
+            document.getElementById("dtComplementoQtd").textContent =
+                complementoQuantidade.toLocaleString("pt-BR");
+
+            document.getElementById("dtComplementoValor").textContent =
+                moeda(complementoValor);
+
+            document.getElementById("dtDiaria").textContent =
+                moeda(diaria);
+
+            document.getElementById("dtOcorrencia").textContent =
+                moeda(ocorrencia);
+
+            document.getElementById("dtTotal").textContent =
+                moeda(valorTotal);
+        }
+
+        function logout() {
+
+            localStorage.removeItem("motorista");
+
+            window.location.href =
+                "login.html";
+        }
+
+    </script>
+
+</body>
+
+</html>

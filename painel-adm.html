@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo</title>
+    <link rel="stylesheet" href="estilo.css">
+</head>
+
+<body class="pagina-painel">
+
+<header class="topo">
+
+    <div class="topo-conteudo">
+
+        <div class="topo-logo">
+            <span>Painel Administrativo</span>
+        </div>
+
+        <div class="topo-usuario">
+
+            <span>
+                Olá,
+                <strong id="nomeAdministrador"></strong>
+            </span>
+
+            <a
+                href="login.html"
+                class="botao-sair"
+                onclick="logout()">
+                Sair
+            </a>
+
+        </div>
+
+    </div>
+
+</header>
+
+<main class="conteudo">
+
+    <section class="bloco">
+
+        <h2>Selecionar Motorista</h2>
+
+        <select
+            id="listaMotoristas"
+            style="
+                width:100%;
+                padding:12px;
+                border-radius:10px;
+                margin-top:10px;
+                margin-bottom:20px;
+            ">
+        </select>
+
+    </section>
+
+    <br>
+
+    <section class="titulo-secao">
+
+        <h2 id="nomeMotorista">
+            Selecione um motorista
+        </h2>
+
+        <span
+            class="mes"
+            id="competencia">
+            --
+        </span>
+
+    </section>
+
+    <section class="cartoes">
+
+        <article class="cartao">
+            <span class="cartao-rotulo">
+                KM Rodados
+            </span>
+
+            <span
+                class="cartao-valor"
+                id="kmQuantidade">
+                0
+            </span>
+        </article>
+
+        <article class="cartao">
+            <span class="cartao-rotulo">
+                KM Complemento
+            </span>
+
+            <span
+                class="cartao-valor"
+                id="complementoQuantidade">
+                0
+            </span>
+        </article>
+
+        <article class="cartao">
+            <span class="cartao-rotulo">
+                Total KM
+            </span>
+
+            <span
+                class="cartao-valor"
+                id="kmTotal">
+                0
+            </span>
+        </article>
+
+        <article class="cartao destaque">
+
+            <span class="cartao-rotulo">
+                Valor Total
+            </span>
+
+            <span
+                class="cartao-valor"
+                id="valorTotal">
+                R$ 0,00
+            </span>
+
+        </article>
+
+    </section>
+
+    <section class="bloco">
+
+        <h2>Detalhamento</h2>
+
+        <table class="tabela">
+
+            <thead>
+
+                <tr>
+                    <th>Descrição</th>
+                    <th>Quantidade</th>
+                    <th>Valor</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>KM Rodados</td>
+                    <td id="dtKmQtd">0</td>
+                    <td id="dtKmValor">R$ 0,00</td>
+                </tr>
+
+                <tr>
+                    <td>Complemento</td>
+                    <td id="dtComplementoQtd">0</td>
+                    <td id="dtComplementoValor">R$ 0,00</td>
+                </tr>
+
+                <tr>
+                    <td>Diária Toco</td>
+                    <td>-</td>
+                    <td id="dtDiaria">R$ 0,00</td>
+                </tr>
+
+                <tr>
+                    <td>Ocorrência Puxe/Couro</td>
+                    <td>-</td>
+                    <td id="dtOcorrencia">R$ 0,00</td>
+                </tr>
+
+                <tr class="linha-total">
+                    <td>TOTAL</td>
+                    <td>-</td>
+                    <td id="dtTotal">R$ 0,00</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+const supabaseClient =
+window.supabase.createClient(
+    "https://zfujippkuopxmbuidwym.supabase.co",
+    "sb_publishable_ZP11cyNHKF88XBnLZV_--g_nSgRctad"
+);
+
+const administrador =
+JSON.parse(
+    localStorage.getItem("administrador")
+);
+
+if(!administrador){
+
+    alert("Administrador não autenticado.");
+
+    window.location.href =
+        "login.html";
+}
+
+document.getElementById(
+    "nomeAdministrador"
+).textContent =
+    administrador.nome;
+
+carregarMotoristas();
+
+async function carregarMotoristas(){
+
+    const select =
+        document.getElementById(
+            "listaMotoristas"
+        );
+
+    select.innerHTML =
+        "<option>Carregando...</option>";
+
+    const { data } =
+        await supabaseClient
+            .from("motoristas")
+            .select("*")
+            .order("nome");
+
+    select.innerHTML =
+        "<option value=''>Selecione um motorista</option>";
+
+    data.forEach(motorista => {
+
+        const option =
+            document.createElement(
+                "option"
+            );
+
+        option.value =
+            motorista.cpf;
+
+        option.textContent =
+            motorista.nome;
+
+        select.appendChild(option);
+
+    });
+
+}
+
+document
+.getElementById(
+    "listaMotoristas"
+)
+.addEventListener(
+    "change",
+    function(){
+
+        const cpf =
+            this.value;
+
+        if(cpf){
+
+            carregarPagamento(
+                cpf
+            );
+        }
+
+    }
+);
+
+async function carregarPagamento(cpf){
+
+    const { data } =
+        await supabaseClient
+            .from("pagamentos")
+            .select("*")
+            .eq(
+                "cpf_motorista",
+                cpf
+            )
+            .single();
+
+    if(!data){
+
+        alert(
+            "Pagamento não encontrado."
+        );
+
+        return;
+    }
+
+    const moeda = valor =>
+        Number(valor || 0)
+            .toLocaleString(
+                "pt-BR",
+                {
+                    style: "currency",
+                    currency: "BRL"
+                }
+            );
+
+    document.getElementById(
+        "competencia"
+    ).textContent =
+        data.competencia;
+
+    document.getElementById(
+        "nomeMotorista"
+    ).textContent =
+        document
+        .getElementById(
+            "listaMotoristas"
+        )
+        .options[
+            document
+            .getElementById(
+                "listaMotoristas"
+            )
+            .selectedIndex
+        ]
+        .text;
+
+    document.getElementById(
+        "kmQuantidade"
+    ).textContent =
+        data.km_quantidade || 0;
+
+    document.getElementById(
+        "complementoQuantidade"
+    ).textContent =
+        data.complemento_quantidade || 0;
+
+    document.getElementById(
+        "kmTotal"
+    ).textContent =
+        Number(data.km_quantidade || 0)
+        +
+        Number(data.complemento_quantidade || 0);
+
+    document.getElementById(
+        "valorTotal"
+    ).textContent =
+        moeda(
+            data.valor_total
+        );
+
+    document.getElementById(
+        "dtKmQtd"
+    ).textContent =
+        data.km_quantidade || 0;
+
+    document.getElementById(
+        "dtKmValor"
+    ).textContent =
+        moeda(
+            data.km_valor
+        );
+
+    document.getElementById(
+        "dtComplementoQtd"
+    ).textContent =
+        data.complemento_quantidade || 0;
+
+    document.getElementById(
+        "dtComplementoValor"
+    ).textContent =
+        moeda(
+            data.complemento_valor
+        );
+
+    document.getElementById(
+        "dtDiaria"
+    ).textContent =
+        moeda(
+            data.diaria_toco
+        );
+
+    document.getElementById(
+        "dtOcorrencia"
+    ).textContent =
+        moeda(
+            data.ocorrencia_puxe_couro
+        );
+
+    document.getElementById(
+        "dtTotal"
+    ).textContent =
+        moeda(
+            data.valor_total
+        );
+}
+
+function logout(){
+
+    localStorage.removeItem(
+        "administrador"
+    );
+
+    window.location.href =
+        "login.html";
+
+}
+
+</script>
+
+</body>
+</html>
